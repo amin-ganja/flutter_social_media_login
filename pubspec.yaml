@@ -1,7 +1,8 @@
 name: flutter_social_media_signin
-description: A new Flutter project.
+description: To be able to loging with social media easly.
 version: 0.0.1
-homepage:
+author: amin.ganja<amin.ganja@theonetechnologies.co.in>
+homepage: https://github.com/amin-ganja/flutter_social_media_login.git
 
 environment:
   sdk: '>=2.18.2 <3.0.0'
@@ -10,11 +11,17 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  firebase_auth: ^4.1.4
+  google_sign_in: ^5.4.2
+  flutter_facebook_auth: 5.0.6
+  sign_in_with_apple: ^4.2.0
+  crypto: ^3.0.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^2.0.0
+
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
