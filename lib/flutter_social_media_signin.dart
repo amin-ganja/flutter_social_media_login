@@ -32,24 +32,6 @@ class FlutterSocialMediaSignin {
 
   // Facebook Auth
 
-  Future<UserCredential> signInWithFirebaseFacebook() async {
-    // Trigger the sign-in flow
-    final LoginResult loginResult = await FacebookAuth.instance.login(
-        permissions: ['public_profile', 'email']
-    );
-
-    // Create a credential from the access token
-    final OAuthCredential facebookAuthCredential =
-    FacebookAuthProvider.credential(loginResult.accessToken!.token);
-
-    // Once signed in, return the UserCredential
-    try {
-      return FirebaseAuth.instance.signInWithCredential(facebookAuthCredential);
-    } on FirebaseAuthException catch (e) {
-      throw Exception(e.message);
-    }
-  }
-
   Future<void> signInWithFacebook() async {
     dynamic userInfo;
     LoginResult result = await FacebookAuth.instance.login();
