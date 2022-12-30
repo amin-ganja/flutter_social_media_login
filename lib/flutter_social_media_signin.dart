@@ -32,7 +32,7 @@ class FlutterSocialMediaSignin {
 
   // Facebook Auth
 
-  Future<void> signInWithFacebook() async {
+  Future<dynamic> signInWithFacebook() async {
     dynamic userInfo;
     LoginResult result = await FacebookAuth.instance.login();
     if (result.status == LoginStatus.success) {
