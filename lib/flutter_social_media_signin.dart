@@ -33,7 +33,9 @@ class FlutterSocialMediaSignin {
 
   Future<UserCredential> signInWithFacebook() async {
     // Trigger the sign-in flow
-    final LoginResult loginResult = await FacebookAuth.instance.login();
+    final LoginResult loginResult = await FacebookAuth.instance.login(
+    permissions: ['public_profile','email']
+    );
 
     // Create a credential from the access token
     final OAuthCredential facebookAuthCredential =
@@ -103,21 +105,17 @@ class FlutterSocialMediaSignin {
 /*===============================================WebSocialLogin=============================================================*/
 
   //Google Auth
-
   Future<UserCredential> signInWithGoogleWeb() async {
     // Create a new provider
     GoogleAuthProvider googleProvider = GoogleAuthProvider();
-
     googleProvider
         .addScope('https://www.googleapis.com/auth/contacts.readonly');
     googleProvider.setCustomParameters({'login_hint': 'user@example.com'});
-
     try {
       return await FirebaseAuth.instance.signInWithPopup(googleProvider);
     } on FirebaseException catch (e) {
       throw Exception(e.message);
     }
-
   }
 
   //Facebook Auth
@@ -126,7 +124,7 @@ class FlutterSocialMediaSignin {
     // Create a new provider
     FacebookAuthProvider facebookProvider = FacebookAuthProvider();
 
-    facebookProvider.addScope('email');
+    facebookProvider.addScope('emailq ');
     facebookProvider.setCustomParameters({
       'display': 'popup',
     });
