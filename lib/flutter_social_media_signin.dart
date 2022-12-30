@@ -17,7 +17,7 @@ class FlutterSocialMediaSignin {
     final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
     // Obtain the auth details from the request
     final GoogleSignInAuthentication? googleAuth =
-        await googleUser?.authentication;
+    await googleUser?.authentication;
     // Create a new credential
     final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth?.accessToken, idToken: googleAuth?.idToken);
@@ -34,12 +34,12 @@ class FlutterSocialMediaSignin {
   Future<UserCredential> signInWithFacebook() async {
     // Trigger the sign-in flow
     final LoginResult loginResult = await FacebookAuth.instance.login(
-    permissions: ['public_profile','email']
+        permissions: ['public_profile', 'email']
     );
 
     // Create a credential from the access token
     final OAuthCredential facebookAuthCredential =
-        FacebookAuthProvider.credential(loginResult.accessToken!.token);
+    FacebookAuthProvider.credential(loginResult.accessToken!.token);
 
     // Once signed in, return the UserCredential
     try {
@@ -86,6 +86,7 @@ class FlutterSocialMediaSignin {
             clientId: clientID, redirectUri: Uri.parse(redirectURL)),
         nonce: nonce,
       );
+
 
       // Create an `OAuthCredential` from the credential returned by Apple.
       final oauthCredential = OAuthProvider("apple.com").credential(
@@ -135,16 +136,15 @@ class FlutterSocialMediaSignin {
     } on FirebaseException catch (e) {
       throw Exception(e.message);
     }
-
   }
+
 
   //Apple Auth
 
   Future<UserCredential> signInWithAppleWeb() async {
     // Create and configure an OAuthProvider for Sign In with Apple.
     final provider = OAuthProvider("apple.com")
-      ..addScope('email')
-      ..addScope('name');
+      ..addScope('email')..addScope('name');
 
     // Sign in the user with Firebase.
     try {
@@ -153,4 +153,52 @@ class FlutterSocialMediaSignin {
       throw Exception(e.message);
     }
   }
+
+
+  /*===============================================SignOut=============================================================*/
+
+
+  Future<void> signOut({SocialMediaType? socialMediaType}) async {
+    switch (socialMediaType) {
+      case SocialMediaType.googleSignIn:
+        return _googleSignOut();
+      case SocialMediaType.faceBookSignIn:
+        return _faceBookSignOut();
+      default:
+        return await FirebaseAuth.instance.signOut();
+    }
+  }
+
+  //Google SignOut
+  Future<void> _googleSignOut() async {
+    try {
+      await GoogleSignIn().signOut();
+      if (FirebaseAuth.instance.currentUser != null) {
+        await FirebaseAuth.instance.signOut();
+      }
+    } on FirebaseException catch (e) {
+      throw Exception(e.message);
+    }
+  }
+
+  //Facebook SignOut
+  Future<void> _faceBookSignOut() async {
+    try {
+      await FacebookAuth.instance.logOut();
+      if (FirebaseAuth.instance.currentUser != null) {
+        await FirebaseAuth.instance.signOut();
+      }
+    } on FirebaseException catch (e) {
+      throw Exception(e.message);
+    }
+  }
 }
+
+/*===============================================SocialMediaType=============================================================*/
+
+enum SocialMediaType {
+  googleSignIn,
+  faceBookSignIn,
+  appleSignIn;
+}
+
