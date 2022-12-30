@@ -8,11 +8,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:http/http.dart' as http;
 
 class FlutterSocialMediaSignin {
   // Google Auth
 
-  Future<UserCredential> signInWithGoogle() async {
+  Future<OAuthCredential> signInWithGoogle() async {
     // Trigger the authentication flow
     final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
     // Obtain the auth details from the request
@@ -22,16 +23,16 @@ class FlutterSocialMediaSignin {
     final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth?.accessToken, idToken: googleAuth?.idToken);
     try {
-      // Once signed in, return the UserCredential
-      return await FirebaseAuth.instance.signInWithCredential(credential);
-    } on FirebaseAuthException catch (e) {
-      throw Exception(e.message);
+      // Once signed in, return the OAuthCredential
+      return credential;
+    } catch (e) {
+      throw Exception(e);
     }
   }
 
   // Facebook Auth
 
-  Future<UserCredential> signInWithFacebook() async {
+  Future<UserCredential> signInWithFirebaseFacebook() async {
     // Trigger the sign-in flow
     final LoginResult loginResult = await FacebookAuth.instance.login(
         permissions: ['public_profile', 'email']
@@ -49,6 +50,26 @@ class FlutterSocialMediaSignin {
     }
   }
 
+  Future<void> signInWithFacebook() async {
+    dynamic userInfo;
+    LoginResult result = await FacebookAuth.instance.login();
+    if (result.status == LoginStatus.success) {
+      final AccessToken accessToken = result.accessToken!;
+      try {
+        http.Response graphResponse = await http.get(Uri.parse(
+            'https://graph.facebook.com/v2.12/me?fields=name,first_name,last_name,email,hometown,token_for_business&access_token=${accessToken
+                .token}'));
+        if (graphResponse.statusCode == 200) {
+         userInfo = jsonDecode(graphResponse.body);
+         return userInfo;
+        } else {
+          await FacebookAuth.instance.logOut();
+        }
+      }catch(e){
+        throw Exception(e);
+      }
+    }
+  }
 // Apple Auth
 
   String generateNonce([int length = 32]) {
@@ -66,7 +87,7 @@ class FlutterSocialMediaSignin {
     return digest.toString();
   }
 
-  Future<UserCredential> signInWithApple(
+  Future<OAuthCredential> signInWithApple(
       {required String clientID, required String redirectURL}) async {
     // To prevent replay attacks with the credential returned from Apple, we
     // include a nonce in the credential request. When signing in with
@@ -86,18 +107,14 @@ class FlutterSocialMediaSignin {
             clientId: clientID, redirectUri: Uri.parse(redirectURL)),
         nonce: nonce,
       );
-
-
       // Create an `OAuthCredential` from the credential returned by Apple.
       final oauthCredential = OAuthProvider("apple.com").credential(
         idToken: appleCredential.identityToken,
         rawNonce: rawNonce,
       );
-
       // Sign in the user with Firebase. If the nonce we generated earlier does
       // not match the nonce in `appleCredential.identityToken`, sign in will fail.
-
-      return FirebaseAuth.instance.signInWithCredential(oauthCredential);
+      return oauthCredential;
     } on FirebaseAuthException catch (e) {
       throw Exception(e.message);
     }
@@ -106,14 +123,14 @@ class FlutterSocialMediaSignin {
 /*===============================================WebSocialLogin=============================================================*/
 
   //Google Auth
-  Future<UserCredential> signInWithGoogleWeb() async {
+  Future<GoogleAuthProvider> signInWithGoogleWeb() async {
     // Create a new provider
     GoogleAuthProvider googleProvider = GoogleAuthProvider();
     googleProvider
         .addScope('https://www.googleapis.com/auth/contacts.readonly');
     googleProvider.setCustomParameters({'login_hint': 'user@example.com'});
     try {
-      return await FirebaseAuth.instance.signInWithPopup(googleProvider);
+      return googleProvider;
     } on FirebaseException catch (e) {
       throw Exception(e.message);
     }
@@ -121,7 +138,7 @@ class FlutterSocialMediaSignin {
 
   //Facebook Auth
 
-  Future<UserCredential> signInWithFacebookWeb() async {
+  Future<FacebookAuthProvider> signInWithFacebookWeb() async {
     // Create a new provider
     FacebookAuthProvider facebookProvider = FacebookAuthProvider();
 
@@ -129,10 +146,9 @@ class FlutterSocialMediaSignin {
     facebookProvider.setCustomParameters({
       'display': 'popup',
     });
-
     // Once signed in, return the UserCredential
     try {
-      return await FirebaseAuth.instance.signInWithPopup(facebookProvider);
+      return facebookProvider;
     } on FirebaseException catch (e) {
       throw Exception(e.message);
     }
@@ -141,14 +157,14 @@ class FlutterSocialMediaSignin {
 
   //Apple Auth
 
-  Future<UserCredential> signInWithAppleWeb() async {
+  Future<OAuthProvider> signInWithAppleWeb() async {
     // Create and configure an OAuthProvider for Sign In with Apple.
     final provider = OAuthProvider("apple.com")
       ..addScope('email')..addScope('name');
 
     // Sign in the user with Firebase.
     try {
-      return await FirebaseAuth.instance.signInWithPopup(provider);
+      return provider;
     } on FirebaseException catch (e) {
       throw Exception(e.message);
     }
@@ -157,47 +173,24 @@ class FlutterSocialMediaSignin {
 
   /*===============================================SignOut=============================================================*/
 
-  Future<void> signOut({SocialMediaType? socialMediaType}) async {
-    switch (socialMediaType) {
-      case SocialMediaType.googleSignIn:
-        return _googleSignOut();
-      case SocialMediaType.faceBookSignIn:
-        return _faceBookSignOut();
-      default:
-        return await FirebaseAuth.instance.signOut();
-    }
-  }
 
   //Google SignOut
-  Future<void> _googleSignOut() async {
+  Future<GoogleSignInAccount?> googleSignOut() async {
     try {
-      await GoogleSignIn().signOut();
-      if (FirebaseAuth.instance.currentUser != null) {
-        await FirebaseAuth.instance.signOut();
-      }
+      return await GoogleSignIn().signOut();
     } on FirebaseException catch (e) {
       throw Exception(e.message);
     }
   }
 
   //Facebook SignOut
-  Future<void> _faceBookSignOut() async {
+  Future<void> faceBookSignOut() async {
     try {
-      await FacebookAuth.instance.logOut();
-      if (FirebaseAuth.instance.currentUser != null) {
-        await FirebaseAuth.instance.signOut();
-      }
-    } on FirebaseException catch (e) {
-      throw Exception(e.message);
+     return await FacebookAuth.instance.logOut();
+    } catch (e) {
+      throw Exception(e);
     }
   }
 }
 
-/*===============================================SocialMediaType=============================================================*/
-
-enum SocialMediaType {
-  googleSignIn,
-  faceBookSignIn,
-  appleSignIn;
-}
 
