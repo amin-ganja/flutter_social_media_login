@@ -157,7 +157,6 @@ class FlutterSocialMediaSignin {
 
   /*===============================================SignOut=============================================================*/
 
-
   Future<void> signOut({SocialMediaType? socialMediaType}) async {
     switch (socialMediaType) {
       case SocialMediaType.googleSignIn:
